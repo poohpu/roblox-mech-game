@@ -15,6 +15,12 @@
       }
     },
 
+     "ServerStorage": {
+      "ServerStore": {
+        "$path": "src/server_storage"
+      }
+    },
+
     "StarterPlayer": {
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
