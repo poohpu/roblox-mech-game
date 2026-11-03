@@ -1,7 +1,8 @@
 local ChickenLegBipedal = {}
 ChickenLegBipedal.__index = ChickenLegBipedal
 
-local MechAudio = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.MechAudio)
+local rojoShared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local MechAudio = require(rojoShared.ModuleScripts.MechModules.MechAudio)
 local CollectionService = game:GetService("CollectionService")
 
 -- Movement & Step Parameters

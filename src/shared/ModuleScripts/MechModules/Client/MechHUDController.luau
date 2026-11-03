@@ -6,8 +6,9 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local UserInputService = game:GetService("UserInputService")
 
+local rojoShared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 local Config = require(script.Parent:WaitForChild("MechClientConfig"))
-local MobileUtil = require(game:GetService("ReplicatedStorage"):WaitForChild("ModuleScripts"):WaitForChild("MobileUtil"))
+local MobileUtil = require(rojoShared:WaitForChild("ModuleScripts"):WaitForChild("MobileUtil"))
 
 local MechHUDController = {}
 

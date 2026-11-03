@@ -9,7 +9,8 @@ local camera = workspace.CurrentCamera
 
 local playerGui = player:WaitForChild("PlayerGui")
 
-local moduleScripts = ReplicatedStorage:WaitForChild("ModuleScripts")
+local rojoShared = ReplicatedStorage:WaitForChild("Shared")
+local moduleScripts = rojoShared:WaitForChild("ModuleScripts")
 local MobileUtil = require(moduleScripts:WaitForChild("MobileUtil"))
 
 local mobileContainer = playerGui:WaitForChild("MobileControlsGui")

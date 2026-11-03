@@ -7,7 +7,8 @@ local UserInputService = game:GetService("UserInputService")
 local ContextActionService = game:GetService("ContextActionService")
 local TweenService = game:GetService("TweenService")
 
-local moduleScripts = ReplicatedStorage:WaitForChild("ModuleScripts")
+local rojoShared = ReplicatedStorage:WaitForChild("Shared")
+local moduleScripts = rojoShared:WaitForChild("ModuleScripts")
 local clientModules = moduleScripts:WaitForChild("MechModules"):WaitForChild("Client")
 
 local Config = require(clientModules:WaitForChild("MechClientConfig"))

@@ -3,12 +3,13 @@
 local ServerStorage = game:GetService("ServerStorage")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CollectionService = game:GetService("CollectionService")
+local rojoShared = ReplicatedStorage:WaitForChild("Shared")
 
 local repairEvent = ReplicatedStorage:WaitForChild("MechRepairEvent")
 local stateUpdateEvent = ReplicatedStorage:WaitForChild("MechStateUpdate")
 local visualEvent = ReplicatedStorage:WaitForChild("WelderVisualEvent")
 local MechVault = ServerStorage:WaitForChild("Vehicles")
-local VisualCluster = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.VisualCluster)
+local VisualCluster = require(rojoShared.ModuleScripts.MechModules.VisualCluster)
 
 
 local function GetPathID(obj, root)

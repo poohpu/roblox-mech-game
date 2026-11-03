@@ -2,9 +2,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CollectionService = game:GetService("CollectionService")
 local ServerStorage = game:GetService("ServerStorage")
 local PhysicsService = game:GetService("PhysicsService")
+local rojoServerStore = ServerStorage:WaitForChild("ServerStore")
 
 local regenEvent = ReplicatedStorage:WaitForChild("RegenTerrainEvent")
-local MapConfigs = ServerStorage:WaitForChild("MapConfigs")
+local MapConfigs = rojoServerStore:WaitForChild("MapConfigs")
 local currentConfig = require(MapConfigs:WaitForChild("GrassMap"))
 
 local mapFolder = workspace:WaitForChild("Map")

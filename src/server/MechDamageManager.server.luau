@@ -5,6 +5,7 @@ local CollectionService = game:GetService("CollectionService")
 local ServerStorage = game:GetService("ServerStorage")
 local TweenService = game:GetService("TweenService")
 local addPointsEvent = ServerStorage:WaitForChild("AddPointsEvent") 
+local rojoShared = ReplicatedStorage:WaitForChild("Shared")
 
 local DAMAGE_POINTS_RATIO = 0.1 -- 1 point per 10 damage dealt (e.g., 50 damage = 5 points)
 local LIMB_SEVER_POINTS = 35
@@ -13,11 +14,11 @@ local damageEvent = ReplicatedStorage:WaitForChild("MechDamageEvent")
 local ApplyDamage
 local ApplyEnvironmentDamage
 
-local CombatGuard = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.CombatGuard)
+local CombatGuard = require(rojoShared.ModuleScripts.MechModules.CombatGuard)
 
-local VisualCluster = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.VisualCluster)
+local VisualCluster = require(rojoShared.ModuleScripts.MechModules.VisualCluster)
 
-local MeleeProfiles = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.Weapons.MeleeProfiles)
+local MeleeProfiles = require(rojoShared.ModuleScripts.MechModules.Weapons.MeleeProfiles)
 
 local function FindBasePart(container, partName)
 	for _, desc in ipairs(container:GetDescendants()) do

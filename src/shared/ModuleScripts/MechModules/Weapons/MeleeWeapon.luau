@@ -10,12 +10,13 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local rojoShared = ReplicatedStorage:WaitForChild("Shared")
 
 local isServer = RunService:IsServer()
 
-local CombatGuard = require(ReplicatedStorage.ModuleScripts.MechModules.CombatGuard)
-local MechAudio = require(ReplicatedStorage.ModuleScripts.MechModules.MechAudio)
-local MeleeProfiles = require(ReplicatedStorage.ModuleScripts.MechModules.Weapons.MeleeProfiles)
+local CombatGuard = require(rojoShared.ModuleScripts.MechModules.CombatGuard)
+local MechAudio = require(rojoShared.ModuleScripts.MechModules.MechAudio)
+local MeleeProfiles = require(rojoShared.ModuleScripts.MechModules.Weapons.MeleeProfiles)
 
 local meleeSparkEvent = ReplicatedStorage:WaitForChild("MechMeleeSpark")
 

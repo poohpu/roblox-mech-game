@@ -2,7 +2,8 @@ local Wheeled = {}
 Wheeled.__index = Wheeled 
 
 local RunService = game:GetService("RunService")
-local MobileUtil = require(game.ReplicatedStorage.ModuleScripts.MobileUtil)
+local rojoShared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local MobileUtil = require(rojoShared.ModuleScripts.MobileUtil)
 
 -- THE CONSTRUCTOR (Runs once when boarding)
 

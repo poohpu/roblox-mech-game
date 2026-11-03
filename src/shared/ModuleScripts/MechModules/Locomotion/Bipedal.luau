@@ -2,7 +2,8 @@
 local Bipedal = {}
 Bipedal.__index = Bipedal 
 local CollectionService = game:GetService("CollectionService")
-local MechAudio = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.MechAudio)
+local rojoShared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local MechAudio = require(rojoShared.ModuleScripts.MechModules.MechAudio)
 
 -- ==========================================
 -- 1. TWEAKABLE STEP PARAMETERS 

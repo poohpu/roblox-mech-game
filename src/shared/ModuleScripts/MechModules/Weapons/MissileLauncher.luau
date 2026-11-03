@@ -4,10 +4,11 @@ MissileLauncher.__index = MissileLauncher
 
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
-local SplashDamage = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.SplashDamage)
+local rojoShared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local SplashDamage = require(rojoShared.ModuleScripts.MechModules.SplashDamage)
 local isServer = RunService:IsServer()
-local CombatGuard = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.CombatGuard)
-local MechAudio = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.MechAudio)
+local CombatGuard = require(rojoShared.ModuleScripts.MechModules.CombatGuard)
+local MechAudio = require(rojoShared.ModuleScripts.MechModules.MechAudio)
 
 local function SecureNetworkFire(self, eventName, target, damage, spillover, explosionID)
 	if isServer then

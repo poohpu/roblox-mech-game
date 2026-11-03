@@ -2,7 +2,8 @@
 local Crawler = {}
 Crawler.__index = Crawler 
 
-local MechAudio = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.MechAudio)
+local rojoShared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
+local MechAudio = require(rojoShared.ModuleScripts.MechModules.MechAudio)
 local CollectionService = game:GetService("CollectionService")
 
 local CRAWL_STRIDE = 3      -- How far the leg stretches behind before resetting

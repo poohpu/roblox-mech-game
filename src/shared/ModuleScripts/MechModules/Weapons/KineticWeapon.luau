@@ -4,11 +4,12 @@ KineticWeapon.__index = KineticWeapon
 
 local RunService = game:GetService("RunService")
 local CollectionService = game:GetService("CollectionService")
+local rojoShared = game:GetService("ReplicatedStorage"):WaitForChild("Shared")
 
 local isServer = RunService:IsServer()
 
-local CombatGuard = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.CombatGuard)
-local MechAudio = require(game:GetService("ReplicatedStorage").ModuleScripts.MechModules.MechAudio)
+local CombatGuard = require(rojoShared.ModuleScripts.MechModules.CombatGuard)
+local MechAudio = require(rojoShared.ModuleScripts.MechModules.MechAudio)
 
 -- This function intercepts all network requests. 
 -- We added 'self' as the first parameter so the Server knows WHO is shooting!
