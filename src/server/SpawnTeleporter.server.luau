@@ -52,6 +52,24 @@ local function givePistol(player)
 	end
 end
 
+local function giveKnife(player)
+	local backpack = player:FindFirstChildOfClass("Backpack")
+	local character = player.Character
+
+	if not backpack or not character then return end
+
+	-- Check if the player already has a pistol equipped or in their inventory
+	local hasKnife = backpack:FindFirstChild("Knife") or character:FindFirstChild("Knife")
+	if hasKnife then return end
+
+	-- Clone a fresh pistol into their backpack
+	local knifeTemplate = toolsFolder:FindFirstChild("Knife")
+	if knifeTemplate then
+		local newKnife = knifeTemplate:Clone()
+		newKnife.Parent = backpack
+	end
+end
+
 local function ApplyCharacterCollisionGroup(player, character)
 	if not character or not player.Team or player.Team.Name == "Lobby" then return end
 
@@ -134,6 +152,7 @@ local function setupTeleporter(startPad, teamName, targetBaseName)
 					rootPart.CFrame = randomSpawn.CFrame + Vector3.new(0, 3, 0)
 					
 					givePistol(player)
+					giveKnife(player)
 					
 					local targetTeam = Teams:FindFirstChild(teamName)
 					if targetTeam then
@@ -164,6 +183,7 @@ local function onCharacterAdded(character, player)
 	-- Only grant the weapon if the round is active and they are not in the lobby
 	if roundStatus.Value == "InRound" and player.Team and player.Team.Name ~= "Lobby" then
 		givePistol(player)
+		giveKnife(player)
 	end
 end
 

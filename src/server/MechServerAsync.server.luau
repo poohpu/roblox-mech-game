@@ -18,7 +18,8 @@ local shoulderMotorRefreshEvent = ServerStorage:WaitForChild("ShoulderMotorRefre
 
 
 local activeMechs = {} 
-local weaponsFolder = ReplicatedStorage:WaitForChild("ModuleScripts"):WaitForChild("MechModules"):WaitForChild("Weapons")
+local rojoShared = ReplicatedStorage:WaitForChild("Shared")
+local weaponsFolder = rojoShared:WaitForChild("ModuleScripts"):WaitForChild("MechModules"):WaitForChild("Weapons")
 
 local function GetMechRoot(mechModel)
 	return mechModel:FindFirstChild("Hip", true) or mechModel:FindFirstChild("Chassis", true)
