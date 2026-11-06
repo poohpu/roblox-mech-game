@@ -7,9 +7,14 @@ local player = Players.LocalPlayer
 
 local moduleScripts = ReplicatedStorage:WaitForChild("Shared"):WaitForChild("ModuleScripts")
 local toolModules = moduleScripts:WaitForChild("ToolModules")
-local KnifeToolModule = require(toolModules:WaitForChild("KnifeToolModule"))
 
-local activeKnifeInstance = nil
+local MobileUtil = require(moduleScripts:WaitForChild("MobileUtil"))
+local isMobile = MobileUtil.isMobile()
+
+local KnifeToolModule = require(toolModules:WaitForChild("KnifeToolModule"))
+local PistolToolModule = require(toolModules:WaitForChild("PistolToolModule"))
+
+local activeToolInstance = nil
 local activeToolConnection = nil
 local aimConnection = nil
 
@@ -19,7 +24,7 @@ local function onCharacterAdded(character)
 	local rootPart = character:WaitForChild("HumanoidRootPart")
 	local humanoid = character:WaitForChild("Humanoid")
 
-	-- Store true default C0s ONCE before any tool modifies them
+	-- Store default baseline C0s ONCE per character life
 	characterBaseC0s[character] = {
 		Waist = character:WaitForChild("UpperTorso"):WaitForChild("Waist").C0,
 		Neck = character:WaitForChild("Head"):WaitForChild("Neck").C0,
@@ -29,53 +34,88 @@ local function onCharacterAdded(character)
 		LeftElbow = character:WaitForChild("LeftLowerArm"):WaitForChild("LeftElbow").C0,
 	}
 
-	-- Clean up memory when character despawns/dies
 	humanoid.Died:Connect(function()
 		characterBaseC0s[character] = nil
 	end)
 
 	character.ChildAdded:Connect(function(child)
-		if child:IsA("Tool") and child.Name == "Knife" then
-	local cleanC0s = characterBaseC0s[character]
+		if not child:IsA("Tool") then return end
 
-			activeKnifeInstance = KnifeToolModule.new(child)
-			activeKnifeInstance:SetupJoints(character, cleanC0s)
+		local cleanC0s = characterBaseC0s[character]
+		local isKnife = (child.Name == "Knife")
+		local isPistol = (child.Name == "Pistol")
 
-			-- Disable default character rotation so body turns with camera ray/mouse
-			humanoid.AutoRotate = false
+		if not isKnife and not isPistol then return end
 
-			-- 1. Attack activation
-			activeToolConnection = child.Activated:Connect(function()
-				if activeKnifeInstance then
-					activeKnifeInstance:OnActivated(player)
-				end
-			end)
+		if isKnife then
+			activeToolInstance = KnifeToolModule.new(child)
+			activeToolInstance:SetupJoints(character, cleanC0s)
+			activeToolInstance:OnEquipped(character)
+		elseif isPistol then
+			activeToolInstance = PistolToolModule.new(child)
+			activeToolInstance:SetupJoints(character, cleanC0s)
+			activeToolInstance:OnEquipped(character)
+		end
 
-			-- 2. Frame-by-frame camera facing & torso pitch aiming
-			aimConnection = RunService.PreRender:Connect(function()
-				local camera = workspace.CurrentCamera
-				if not character or not rootPart then return end
+		humanoid.AutoRotate = false
 
-				local lookVector = camera.CFrame.LookVector
+		-- 1. Attack / Fire input connection
+		activeToolConnection = child.Activated:Connect(function()
+			if activeToolInstance then
+				activeToolInstance:OnActivated(player)
+			end
+		end)
 
-				-- Rotate whole body horizontally (Yaw) towards camera look direction
+		-- 2. Aim & Spine posture tracking loop
+		aimConnection = RunService.PreRender:Connect(function()
+			if not character or not rootPart or not activeToolInstance then return end
+
+			local camera = workspace.CurrentCamera
+			local lookVector = camera.CFrame.LookVector
+			local rootPos = rootPart.Position
+
+			-- Horizontal Body Yaw Rotation
+			if isMobile then
+				-- Mobile: Lock character body to face camera look direction
 				local flatLook = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
 				if flatLook.Magnitude > 0.1 then
-					rootPart.CFrame = CFrame.lookAt(rootPart.Position, rootPart.Position + flatLook)
+					rootPart.CFrame = CFrame.lookAt(rootPos, rootPos + flatLook)
 				end
-
-				-- Calculate pitch angle (-1 to 1 rad) for spine tilt
-				local pitch = math.asin(math.clamp(lookVector.Y, -1, 1))
-
-				if activeKnifeInstance then
-					activeKnifeInstance:UpdatePosture(pitch)
+			else
+				-- PC: Face mouse target position
+				local mousePos = player:GetMouse().Hit.Position
+				local flatTarget = Vector3.new(mousePos.X, rootPos.Y, mousePos.Z)
+				if (flatTarget - rootPos).Magnitude > 0.1 then
+					rootPart.CFrame = CFrame.lookAt(rootPos, flatTarget)
 				end
-			end)
-		end
+			end
+
+			-- Vertical Pitch Angle
+			local pitch = math.asin(math.clamp(lookVector.Y, -1, 1))
+
+			-- Crosshair overlay positioning
+			local cursorGui = player.PlayerGui:FindFirstChild("CursorGui")
+			if cursorGui then
+				local crosshair = cursorGui:FindFirstChild("Crosshair")
+				if crosshair and crosshair.Visible then
+					if isMobile then
+						-- Lock crosshair precisely to the center of the screen
+						local viewport = camera.ViewportSize
+						crosshair.Position = UDim2.fromOffset(viewport.X * 0.5, viewport.Y * 0.5)
+					else
+						-- Follow mouse location on PC
+						local screenPos = UserInputService:GetMouseLocation()
+						crosshair.Position = UDim2.fromOffset(screenPos.X, screenPos.Y)
+					end
+				end
+			end
+
+			activeToolInstance:UpdatePosture(pitch)
+		end)
 	end)
 
 	character.ChildRemoved:Connect(function(child)
-		if child:IsA("Tool") and child.Name == "Knife" then
+		if child:IsA("Tool") and (child.Name == "Knife" or child.Name == "Pistol") then
 			if activeToolConnection then
 				activeToolConnection:Disconnect()
 				activeToolConnection = nil
@@ -85,9 +125,9 @@ local function onCharacterAdded(character)
 				aimConnection = nil
 			end
 
-			if activeKnifeInstance then
-				activeKnifeInstance:OnUnequipped() 
-				activeKnifeInstance = nil
+			if activeToolInstance then
+				activeToolInstance:OnUnequipped()
+				activeToolInstance = nil
 			end
 
 			humanoid.AutoRotate = true

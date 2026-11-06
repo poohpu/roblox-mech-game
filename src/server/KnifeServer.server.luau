@@ -9,15 +9,46 @@ if not knifeHitEvent then
 	knifeHitEvent.Parent = ReplicatedStorage
 end
 
+local knifeStabEvent = ReplicatedStorage:FindFirstChild("KnifeStab")
+if not knifeStabEvent then
+	knifeStabEvent = Instance.new("RemoteEvent")
+	knifeStabEvent.Name = "KnifeStab"
+	knifeStabEvent.Parent = ReplicatedStorage
+end
+
+
+
 local DAMAGE = 35
 local BASE_KNIFE_RANGE = 6
 local RUNNING_SPEED = 24 -- Estimated max infantry speed (studs/sec)
+
+local roundStatus = ReplicatedStorage:FindFirstChild("RoundStatus")
+if not roundStatus then
+	roundStatus = Instance.new("StringValue")
+	roundStatus.Name = "RoundStatus"
+	roundStatus.Value = "Intermission"
+	roundStatus.Parent = ReplicatedStorage
+end
+
+knifeStabEvent.OnServerEvent:Connect(function(player, pitch)
+	if typeof(pitch) ~= "number" then return end
+	pitch = math.clamp(pitch, -1.5, 1.5)
+
+	-- Broadcast stab animation trigger to all other clients
+	knifeStabEvent:FireAllClients(player, pitch)
+end)
 
 knifeHitEvent.OnServerEvent:Connect(function(player, hitPart, hitPosition)
 	if not hitPart or not hitPart.Parent then return end
 
 	local character = player.Character
 	if not character or not character:FindFirstChild("HumanoidRootPart") then return end
+
+	-- holding knife check
+	local knifeTool = character:FindFirstChild("Knife")
+	if not knifeTool or not knifeTool:IsA("Tool") then
+		return 
+	end
 
 	-- Get round-trip ping in seconds (clamped to prevent extreme exploitation)
 	local pingSeconds = math.clamp(player:GetNetworkPing(), 0, 1)
@@ -40,11 +71,11 @@ knifeHitEvent.OnServerEvent:Connect(function(player, hitPart, hitPosition)
 	local targetPlayer = Players:GetPlayerFromCharacter(targetModel)
 
 	-- Apply damage and set kill-attribution tags
-	if targetHumanoid and targetHumanoid.Health > 0 then
-		-- Prevent friendly fire between teammates
-		if player.Team and targetPlayer and targetPlayer.Team and player.Team == targetPlayer.Team then
-			return
-		end
+	if targetHumanoid and targetHumanoid.Health > 0 and targetPlayer then
+		if roundStatus.Value ~= "InRound" then return end
+		if player.Team and player.Team.Name == "Lobby" then return end
+		if targetPlayer.Team and targetPlayer.Team.Name == "Lobby" then return end
+		if player.Team and targetPlayer.Team and player.Team == targetPlayer.Team then return end
 
 		targetModel:SetAttribute("LastAttacker", player.UserId)
 		targetModel:SetAttribute("LastDamageTime", os.clock())

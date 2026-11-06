@@ -624,17 +624,20 @@ local function generateTerrain(config)
 
 	-- 1. Draw Ground Triangle Mesh
 	--print("🌱 Drawing terrain triangles...")
-	for x = bounds.startX, bounds.endX - gridSize, gridSize do
-		for z = bounds.startZ, bounds.endZ - gridSize, gridSize do
+	for x = bounds.startX, bounds.endX - 1, gridSize do
+		for z = bounds.startZ, bounds.endZ - 1, gridSize do
+			local nextX = math.min(x + gridSize, bounds.endX)
+			local nextZ = math.min(z + gridSize, bounds.endZ)
+
 			local y1 = GetGrassHeight(x, z)
-			local y2 = GetGrassHeight(x + gridSize, z)
-			local y3 = GetGrassHeight(x, z + gridSize)
-			local y4 = GetGrassHeight(x + gridSize, z + gridSize)
+			local y2 = GetGrassHeight(nextX, z)
+			local y3 = GetGrassHeight(x, nextZ)
+			local y4 = GetGrassHeight(nextX, nextZ)
 
 			local p1 = Vector3.new(x, y1, z)
-			local p2 = Vector3.new(x + gridSize, y2, z)
-			local p3 = Vector3.new(x, y3, z + gridSize)
-			local p4 = Vector3.new(x + gridSize, y4, z + gridSize)
+			local p2 = Vector3.new(nextX, y2, z)
+			local p3 = Vector3.new(x, y3, nextZ)
+			local p4 = Vector3.new(nextX, y4, nextZ)
 
 			local colorVar = math.random(-tSettings.ColorVariance, tSettings.ColorVariance)
 			local triColor = Color3.fromRGB(

@@ -6,7 +6,7 @@ local GrassMap = {
 
 	-- Ground & Terrain Math
 	Terrain = {
-		GridSize = 100,
+		GridSize = 150,
 		HillHeight = 30,
 		HillSmoothness = 120,
 		FlatBaseHeight = 5,

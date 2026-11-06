@@ -1,7 +1,54 @@
 local KnifeToolModule = {}
 KnifeToolModule.__index = KnifeToolModule
 
+local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local player = Players.LocalPlayer
+
+local rojoShared = ReplicatedStorage:WaitForChild("Shared")
+local moduleScripts = rojoShared:WaitForChild("ModuleScripts")
+local MobileUtil = require(moduleScripts:WaitForChild("MobileUtil"))
+local isMobile = MobileUtil.isMobile()
+
+local BASE_SCREEN_HEIGHT = 580
+local BASE_CROSSHAIR_SIZE = 40
+local MOUSE_ICON = "rbxasset://textures/GunCursor.png"
+
+-- Hitbox volume for BlockCast (Width, Height, Depth)
+local STAB_BOX_SIZE = Vector3.new(1.5, 1, 1.5)
+
+local DEBUG_HITBOX = false
+
+local function visualizeBlockCast(startCFrame, castDistance, hitResult)
+	if not DEBUG_HITBOX then return end
+
+	local isHit = hitResult ~= nil
+	local boxColor = isHit and Color3.fromRGB(0, 255, 100) or Color3.fromRGB(255, 50, 50)
+	
+	-- Calculate volume center along the sweep path
+	local actualLength = isHit and hitResult.Distance or castDistance
+	local centerCFrame = startCFrame * CFrame.new(0, 0, -actualLength / 2)
+	local volumeSize = Vector3.new(STAB_BOX_SIZE.X, STAB_BOX_SIZE.Y, STAB_BOX_SIZE.Z + actualLength)
+
+	local debugPart = Instance.new("Part")
+	debugPart.Name = "DebugHitbox"
+	debugPart.Size = volumeSize
+	debugPart.CFrame = centerCFrame
+	debugPart.Anchored = true
+	debugPart.CanCollide = false
+	debugPart.CanQuery = false
+	debugPart.Material = Enum.Material.ForceField
+	debugPart.Color = boxColor
+	debugPart.Transparency = 0.4
+
+	local trashFolder = workspace:FindFirstChild("Map") and workspace.Map:FindFirstChild("TrashPart")
+	debugPart.Parent = trashFolder or workspace
+
+	game:GetService("Debris"):AddItem(debugPart, 0.5) -- Part despawns after 0.5 seconds
+end
 
 function KnifeToolModule.new(toolInstance)
 	local self = setmetatable({}, KnifeToolModule)
@@ -63,9 +110,40 @@ function KnifeToolModule:CancelTweens()
 	table.clear(self.ActiveTweens)
 end
 
+function KnifeToolModule:OnEquipped(character)
+	self.Equipped = true
+
+	-- Enable Crosshair UI
+	local cursorGui = player.PlayerGui:FindFirstChild("CursorGui")
+	if cursorGui then
+		local crosshair = cursorGui:FindFirstChild("Crosshair")
+		if crosshair then
+			local currentScreenHeight = workspace.CurrentCamera.ViewportSize.Y
+			local scaleFactor = currentScreenHeight / BASE_SCREEN_HEIGHT
+			local adjustedSize = math.round(BASE_CROSSHAIR_SIZE * scaleFactor)
+
+			cursorGui.IgnoreGuiInset = true
+			crosshair.Size = UDim2.fromOffset(adjustedSize, adjustedSize)
+			crosshair.Image = MOUSE_ICON
+			crosshair.Visible = true
+			UserInputService.MouseIconEnabled = false
+		end
+	end
+end
+
 function KnifeToolModule:UpdatePosture(cameraPitch)
 	if self.IsStabbing then return end
 	if not self.WaistJoint or not self.BaseWaistC0 then return end
+
+	-- Stream aim pitch to server at 20Hz rate
+	local now = os.clock()
+	if now - (self.LastAimSync or 0) >= 0.05 then
+		self.LastAimSync = now
+		local pilotAimEvent = ReplicatedStorage:FindFirstChild("PilotAim")
+		if pilotAimEvent then
+			pilotAimEvent:FireServer(cameraPitch)
+		end
+	end
 
 	-- 1. Hunch spine slightly forward (-10 deg) and add 25% camera pitch
 	local waistHunch = math.rad(-10)
@@ -121,7 +199,9 @@ function KnifeToolModule:AnimateStab(cameraPitch)
 	table.insert(self.ActiveTweens, wArmTween)
 
 	if self.RightElbow and self.BaseRightElbowC0 then
-		TweenService:Create(self.RightElbow, windupInfo, { C0 = windupElbow }):Play()
+		local wElbowTween = TweenService:Create(self.RightElbow, windupInfo, { C0 = windupElbow })
+		table.insert(self.ActiveTweens, wElbowTween)
+		wElbowTween:Play()
 	end
 
 	wWaistTween:Play()
@@ -190,16 +270,31 @@ function KnifeToolModule:OnActivated(player)
 	local lookVector = camera.CFrame.LookVector
 	local cameraPitch = math.asin(math.clamp(lookVector.Y, -1, 1))
 
+	local knifeStabEvent = ReplicatedStorage:FindFirstChild("KnifeStab")
+	if knifeStabEvent then
+		knifeStabEvent:FireServer(cameraPitch)
+	end
+
 	task.spawn(function()
 		task.wait(0.3)
 		local origin = character.HumanoidRootPart.Position
-		local attackDirection = camera.CFrame.LookVector
+		local attackDirection
 
+		if isMobile then
+			attackDirection = camera.CFrame.LookVector
+		else
+			-- PC: Aim directly towards crosshair / mouse target
+			local mousePos = player:GetMouse().Hit.Position
+			attackDirection = (mousePos - origin).Unit
+		end
 		local rayParams = RaycastParams.new()
 		rayParams.FilterType = Enum.RaycastFilterType.Exclude
 		rayParams.FilterDescendantsInstances = {character, self.Tool}
 		rayParams.CollisionGroup = "Players"
-		local hitResult = workspace:Raycast(origin, attackDirection * self.Range, rayParams)
+
+		local startCFrame = CFrame.lookAt(origin, origin + attackDirection)
+		local hitResult = workspace:Blockcast(startCFrame, STAB_BOX_SIZE, attackDirection * self.Range, rayParams)
+		visualizeBlockCast(startCFrame, self.Range, hitResult)
 
 		if hitResult then
 			local knifeHitEvent = game:GetService("ReplicatedStorage"):FindFirstChild("KnifeHit")
@@ -217,10 +312,25 @@ function KnifeToolModule:OnActivated(player)
 end
 
 function KnifeToolModule:OnUnequipped()
-	self:CancelTweens()
-
 	self.IsStabbing = false
+	self:CancelTweens()
+	
 	self.CanSwing = true
+	self.Equipped = false
+
+	local pilotAimEvent = ReplicatedStorage:FindFirstChild("PilotAim")
+	if pilotAimEvent then
+		pilotAimEvent:FireServer(0)
+	end
+
+	local cursorGui = player.PlayerGui:FindFirstChild("CursorGui")
+	if cursorGui then
+		local crosshair = cursorGui:FindFirstChild("Crosshair")
+		if crosshair then
+			crosshair.Visible = false
+		end
+	end
+	UserInputService.MouseIconEnabled = true
 
 	self:ResetJoints()
 end
