@@ -1,0 +1,3 @@
+local CityMap = {}
+
+return CityMap
